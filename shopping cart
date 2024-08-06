@@ -1,0 +1,65 @@
+using Moq;
+using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+
+public class ShoppingCartTests
+{
+    private readonly Mock<IProductRepository> _mockProductRepository;
+    private readonly ShoppingCart _shoppingCart;
+
+    public ShoppingCartTests()
+    {
+        _mockProductRepository = new Mock<IProductRepository>();
+        _shoppingCart = new ShoppingCart(_mockProductRepository.Object);
+    }
+
+    [Fact]
+    public void AddToCart_ProductExists_AddsProductToCart()
+    {
+        // Arrange
+        var product = new Product { ProductId = 1, Name = "Test Product", Price = 10.0m };
+        _mockProductRepository.Setup(repo => repo.GetProductById(1)).Returns(product);
+
+        // Act
+        _shoppingCart.AddToCart(1);
+
+        // Assert
+        var total = _shoppingCart.CalculateTotal();
+        Assert.Equal(10.0m, total);
+    }
+
+    [Fact]
+    public void AddToCart_ProductDoesNotExist_DoesNotAddProductToCart()
+    {
+        // Arrange
+        _mockProductRepository.Setup(repo => repo.GetProductById(1)).Returns((Product)null);
+
+        // Act
+        _shoppingCart.AddToCart(1);
+
+        // Assert
+        var total = _shoppingCart.CalculateTotal();
+        Assert.Equal(0.0m, total);
+    }
+
+    [Fact]
+    public void CalculateTotal_MultipleProducts_ReturnsCorrectTotal()
+    {
+        // Arrange
+        var product1 = new Product { ProductId = 1, Name = "Product 1", Price = 10.0m };
+        var product2 = new Product { ProductId = 2, Name = "Product 2", Price = 20.0m };
+
+        _mockProductRepository.Setup(repo => repo.GetProductById(1)).Returns(product1);
+        _mockProductRepository.Setup(repo => repo.GetProductById(2)).Returns(product2);
+
+        _shoppingCart.AddToCart(1);
+        _shoppingCart.AddToCart(2);
+
+        // Act
+        var total = _shoppingCart.CalculateTotal();
+
+        // Assert
+        Assert.Equal(30.0m, total);
+    }
+}
